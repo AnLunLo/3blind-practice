@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLD Trainer · 3×3 盲解練習</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Crimson+Pro:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#090909;--bg2:#0e0e0e;--bg3:#141414;
+  --border:#1e1e1e;--border2:#2a2a2a;
+  --gold:#e2c97e;--gold2:#c9a227;
+  --text:#d0d0d0;--muted:#666;--muted2:#444;
+  --green:#4caf50;--red:#e63946;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;min-height:100vh}
+button{font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:opacity .15s,transform .1s}
+button:active{transform:scale(.97)}
+input{font-family:'Noto Sans TC',sans-serif;outline:none}
+#app{max-width:640px;margin:0 auto}
+
+header{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-family:'Crimson Pro',serif;font-size:22px;color:var(--gold);letter-spacing:.5px}
+header .sub{font-size:10px;color:var(--muted2);margin-top:2px}
+
+nav{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:53px;z-index:40}
+.nav-btn{flex:1;padding:10px 6px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:11px;font-family:'Space Mono',monospace;transition:color .15s,border-color .15s}
+.nav-btn .icon{font-size:14px;display:block;margin-bottom:2px}
+.nav-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+main{padding:20px 16px}
+
+/* ── Recognition ── */
+.quiz-wrap{text-align:center;padding-top:8px}
+.stats-bar{display:flex;justify-content:flex-end;gap:16px;margin-bottom:24px}
+.stat-c{color:var(--green);font-size:13px}
+.stat-w{color:var(--red);font-size:13px}
+
+.prompt-label{color:var(--muted2);font-size:11px;letter-spacing:1px;margin-bottom:12px;text-transform:uppercase}
+.zhuyin-pair{font-size:72px;color:var(--gold);line-height:1;margin-bottom:32px;font-family:'Noto Sans TC',sans-serif;letter-spacing:4px}
+
+.word-input{
+  display:block;margin:0 auto 8px;
+  width:220px;padding:14px 16px;
+  text-align:center;font-size:22px;
+  background:var(--bg3);border:2px solid var(--border2);
+  border-radius:12px;color:#fff;
+  transition:border-color .2s,color .2s;
+}
+.word-input:focus{border-color:#444}
+.word-input.correct{border-color:var(--green);color:var(--green)}
+.word-input.wrong{border-color:var(--red);color:var(--red)}
+
+.result-area{min-height:32px;margin:12px 0 20px;font-size:18px}
+.result-correct{color:var(--green)}
+.result-wrong{color:var(--red)}
+.result-answer{color:var(--gold);font-weight:700}
+.result-note{color:var(--muted);font-size:13px;margin-top:4px}
+
+.btn-confirm{padding:12px 44px;background:var(--gold);color:#000;border:none;border-radius:9px;font-weight:700;font-size:16px}
+.btn-confirm:disabled{opacity:.3;cursor:default}
+.btn-next{padding:12px 44px;background:var(--gold);color:#000;border:none;border-radius:9px;font-weight:700;font-size:16px}
+
+.no-memo-note{color:var(--muted2);font-size:12px;margin-top:8px}
+
+/* ── Memo ── */
+.btn-primary{width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-weight:700;font-size:15px;font-family:'Space Mono',monospace}
+.btn-danger{background:var(--red);color:#fff;width:100%;padding:13px;border:none;border-radius:10px;font-weight:700;font-size:15px}
+.timer-box{background:var(--bg3);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center;border:1px solid var(--border)}
+.timer-label{color:var(--muted2);font-size:11px;margin-bottom:4px}
+.timer-value{color:var(--gold);font-size:48px;font-family:'Space Mono',monospace;font-weight:700}
+.seq-label{color:#999;font-size:12px;margin-bottom:8px}
+.pair-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px}
+.pair-card{background:var(--bg3);border-radius:8px;padding:8px 14px;text-align:center;min-width:68px;border:1px solid var(--border)}
+.pair-zh{font-size:17px;color:var(--gold);letter-spacing:3px;margin-bottom:3px}
+.pair-word{color:var(--muted);font-size:11px}
+.memo-input-wrap{margin-bottom:14px}
+.memo-input-label{color:#999;font-size:12px;display:block;margin-bottom:5px}
+.memo-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:#fff;font-size:20px;padding:12px 14px;letter-spacing:2px}
+.diff-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.diff-chip{min-width:30px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-size:13px;font-weight:700;padding:0 4px}
+.diff-chip.ok{background:#142014;border:1px solid var(--green);color:var(--green)}
+.diff-chip.bad{background:#201414;border:1px solid var(--red);color:var(--red)}
+.time-display{color:var(--muted);font-size:13px;margin-bottom:12px}
+.time-display span{color:var(--gold);font-family:'Space Mono',monospace}
+
+/* ── Mode toggle in header ── */
+/* ── Ref ── */
+.ref-section-title{color:var(--muted);font-size:11px;letter-spacing:1px;margin-bottom:10px;margin-top:20px}
+.ref-section-title:first-child{margin-top:0}
+.ref-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.ref-card{background:var(--bg3);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;border:1px solid var(--border)}
+.ref-id{font-family:'Space Mono',monospace;font-size:11px;min-width:30px;color:var(--gold)}
+.ref-id.edge{color:#a8d8a8}
+.ref-stickers{display:flex;gap:6px}
+.ref-sticker{text-align:center}
+.ref-dot{width:18px;height:18px;border-radius:3px;margin-bottom:2px}
+.ref-z{color:#aaa;font-size:13px}
+.ref-memo{color:var(--muted2);font-size:11px;margin-left:auto}
+
+.status-pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:6px}
+.status-ok{background:#143a14;color:var(--green)}
+.status-err{background:#3a1414;color:var(--red)}
+.status-loading{background:#2a2a14;color:#aaa}
+
+/* ── 3D Cube in Quiz ── */
+#quiz-cube-wrap{width:100%;max-width:320px;margin:0 auto 18px;border-radius:14px;overflow:hidden;border:1px solid #ddd;background:#fff}
+#quiz-cube-canvas{width:100%;display:block;touch-action:none}
+
+/* ── Ref accordion ── */
+.ref-group{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.ref-group-header{width:100%;background:var(--bg3);border:none;color:var(--gold);font-size:14px;font-family:'Space Mono',monospace;padding:10px 14px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.ref-group-header:hover{background:#1a1a1a}
+.ref-group-header .arrow{transition:transform .2s;font-size:10px;color:var(--muted)}
+.ref-group-header.open .arrow{transform:rotate(180deg)}
+.ref-group-body{display:none;padding:8px}
+.ref-group-body.open{display:block}
+.ref-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
+/* ── Identify ── */
+.id-sticker-hit{cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <h1>BLD Trainer</h1>
+      <div class="sub">3×3 盲解 · 3-style · 注音方案<span id="memo-status" class="status-pill status-loading">載入中...</span></div>
+    </div>
+
+  </header>
+
+  <nav>
+    <button class="nav-btn active" data-tab="recognition" onclick="setTab('recognition')"><span class="icon">◈</span>辨識</button>
+    <button class="nav-btn" data-tab="identify" onclick="setTab('identify')"><span class="icon">◎</span>指認</button>
+    <button class="nav-btn" data-tab="memo" onclick="setTab('memo')"><span class="icon">◉</span>Memo</button>
+    <button class="nav-btn" data-tab="ref" onclick="setTab('ref')"><span class="icon">≡</span>參考表</button>
+  </nav>
+
+  <main>
+
+    <!-- RECOGNITION -->
+    <div id="tab-recognition">
+      <div class="quiz-wrap">
+        <div class="stats-bar">
+          <span class="stat-c">✓ <span id="stat-correct">0</span></span>
+          <span class="stat-w">✗ <span id="stat-wrong">0</span></span>
+        </div>
+        <div class="prompt-label">這組代號對應的名詞是？</div>
+        <div class="zhuyin-pair" id="quiz-pair">—</div>
+        <input class="word-input" id="quiz-input" placeholder="輸入名詞" autocomplete="off"
+          oninput="onQuizInput()" onkeydown="onQuizKey(event)">
+        <div class="result-area" id="quiz-result"></div>
+        <div>
+          <button class="btn-confirm" id="quiz-confirm" onclick="checkQuiz()" disabled>確認</button>
+        </div>
+        <div class="no-memo-note" id="quiz-no-memo"></div>
+      </div>
+      <div id="quiz-cube-wrap">
+        <canvas id="quiz-cube-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- IDENTIFY -->
+    <div id="tab-identify" style="display:none">
+      <div class="quiz-wrap">
+        <div class="stats-bar">
+          <span class="stat-c">✓ <span id="id-stat-correct">0</span></span>
+          <span class="stat-w">✗ <span id="id-stat-wrong">0</span></span>
+        </div>
+        <div class="prompt-label">這個注音代號在方塊上的哪個位置？</div>
+        <div class="zhuyin-pair" id="id-quiz-char">—</div>
+        <div id="id-prompt-line" style="color:var(--muted);font-size:13px;margin-bottom:6px">請點出角塊與邊塊各一個貼片</div>
+        <div id="id-result-area" style="min-height:44px;margin-bottom:10px;font-size:16px"></div>
+      </div>
+      <div id="id-cube-wrap" style="width:100%;max-width:320px;margin:0 auto 18px;border-radius:14px;overflow:hidden;border:1px solid #ddd;background:#fff">
+        <canvas id="id-cube-canvas" style="width:100%;display:block;touch-action:none"></canvas>
+      </div>
+      <div style="text-align:center;padding-bottom:24px">
+        <button class="btn-next" id="id-next-btn" onclick="idNextQuiz()" style="display:none">下一題 →</button>
+      </div>
+    </div>
+
+    <!-- MEMO -->
+    <div id="tab-memo" style="display:none">
+      <div id="memo-phase-memo">
+        <div class="timer-box"><div class="timer-label">記憶計時</div><div class="timer-value" id="timer-display">0.0s</div></div>
+        <div id="memo-corner-section"><div class="seq-label">角塊序列</div><div class="pair-grid" id="corner-pairs"></div></div>
+        <div id="memo-edge-section"><div class="seq-label">邊塊序列</div><div class="pair-grid" id="edge-pairs"></div></div>
+        <button class="btn-danger" onclick="stopMemo()" style="margin-top:8px">記好了，遮住答案 →</button>
+      </div>
+      <div id="memo-phase-input" style="display:none">
+        <div style="color:var(--muted);font-size:14px;margin-bottom:20px;text-align:center">輸入你記憶的注音序列：</div>
+        <div id="memo-input-corner" class="memo-input-wrap">
+          <label class="memo-input-label" id="corner-input-label">角塊</label>
+          <input class="memo-input" id="input-corner" autocomplete="off">
+        </div>
+        <div id="memo-input-edge" class="memo-input-wrap">
+          <label class="memo-input-label" id="edge-input-label">邊塊</label>
+          <input class="memo-input" id="input-edge" autocomplete="off">
+        </div>
+        <button class="btn-primary" onclick="checkMemo()">驗證答案</button>
+      </div>
+      <div id="memo-phase-result" style="display:none">
+        <div class="time-display">記憶時間：<span id="memo-time-result"></span></div>
+        <div id="result-corner-section"><div class="seq-label">角塊結果</div><div class="diff-row" id="diff-corner"></div><div style="margin-bottom:16px"></div></div>
+        <div id="result-edge-section"><div class="seq-label">邊塊結果</div><div class="diff-row" id="diff-edge"></div><div style="margin-bottom:20px"></div></div>
+        <button class="btn-primary" onclick="showMemoPhase('memo')">再練一次 ⟳</button>
+      </div>
+    </div>
+
+    <!-- REF -->
+    <div id="tab-ref" style="display:none">
+      <h2 style="font-family:'Crimson Pro',serif;font-size:20px;color:var(--gold);margin-bottom:16px">位置編碼參考表</h2>
+      <div id="ref-accordion"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const SHEET_ID="12hACYBPuOf-U45q416JeTW8Yo65B2Pdl5_b6heFYk5Q";
+const GID="130446872";
+const FACE_COLOR={U:"#f0f0f0",D:"#ffd200",F:"#2d9e4f",B:"#457b9d",R:"#e63946",L:"#ff7b1c"};
+
+const CORNERS=[
+  {id:"UFR",z:["ㄈ","ㄌ","ㄖ"],faces:["U","F","R"]},
+  {id:"UFL",z:["ㄅ","ㄉ","ㄒ"],faces:["U","F","L"]},
+  {id:"UBR",z:["ㄇ","ㄋ","ㄕ"],faces:["U","B","R"]},
+  {id:"UBL",z:["ㄆ","ㄊ","ㄑ"],faces:["U","B","L"]},
+  {id:"DFR",z:["ㄩ","ㄐ","ㄗ"],faces:["D","F","R"]},
+  {id:"DFL",z:["ㄙ","ㄍ","ㄓ"],faces:["D","F","L"]},
+  {id:"DBR",z:["ㄨ","ㄏ","ㄘ"],faces:["D","B","R"]},
+  {id:"DBL",z:["ㄧ","ㄎ","ㄔ"],faces:["D","B","L"]},
+];
+const EDGES=[
+  {id:"UF",z:["ㄅ","ㄉ"],faces:["U","F"]},
+  {id:"UB",z:["ㄇ","ㄋ"],faces:["U","B"]},
+  {id:"UR",z:["ㄈ","ㄌ"],faces:["U","R"]},
+  {id:"UL",z:["ㄆ","ㄊ"],faces:["U","L"]},
+  {id:"FR",z:["ㄔ","ㄓ"],faces:["F","R"]},
+  {id:"FL",z:["ㄍ","ㄎ"],faces:["F","L"]},
+  {id:"BR",z:["ㄑ","ㄒ"],faces:["B","R"]},
+  {id:"BL",z:["ㄐ","ㄏ"],faces:["B","L"]},
+  {id:"DF",z:["ㄙ","ㄕ"],faces:["D","F"]},
+  {id:"DR",z:["ㄩ","ㄘ"],faces:["D","R"]},
+  {id:"DB",z:["ㄨ","ㄗ"],faces:["D","B"]},
+  {id:"DL",z:["ㄧ","ㄖ"],faces:["D","L"]},
+];
+const CORNER_BUFFER="UFR", EDGE_BUFFER="UF";
+
+let currentTab="recognition";
+let memoTable={};
+let quizCurrent=null, stats={c:0,w:0};
+let memoTimer=null, memoMs=0, memoFinalMs=0;
+
+// ── Google Sheets ──────────────────────────────
+const MEMO_DATA = {
+  "ㄅㄆ":"薄片",
+  "ㄅㄇ":"斑馬",
+  "ㄅㄈ":"蝙蝠",
+  "ㄅㄉ":"拜登",
+  "ㄅㄊ":"BTC",
+  "ㄅㄋ":"白鳥",
+  "ㄅㄌ":"白龍",
+  "ㄅㄍ":"白鴿",
+  "ㄅㄎ":"冰塊",
+  "ㄅㄏ":"冰河",
+  "ㄅㄐ":"冰肌",
+  "ㄅㄑ":"抱歉",
+  "ㄅㄒ":"伯憲",
+  "ㄅㄓ":"抱枕",
+  "ㄅㄔ":"北車",
+  "ㄅㄕ":"寶山",
+  "ㄅㄖ":"被褥",
+  "ㄅㄗ":"包子",
+  "ㄅㄘ":"拔草",
+  "ㄅㄙ":"報絲",
+  "ㄅㄧ":"逼逼",
+  "ㄅㄨ":"寶物",
+  "ㄅㄩ":"白雲",
+  "ㄆㄅ":"跑步",
+  "ㄆㄇ":"泡麵",
+  "ㄆㄈ":"泡芙",
+  "ㄆㄉ":"普丁",
+  "ㄆㄊ":"萄葡",
+  "ㄆㄋ":"波妞",
+  "ㄆㄌ":"蓬萊",
+  "ㄆㄍ":"屁股",
+  "ㄆㄎ":"撲克",
+  "ㄆㄏ":"胖虎",
+  "ㄆㄐ":"啤酒",
+  "ㄆㄑ":"排球",
+  "ㄆㄒ":"螃蟹",
+  "ㄆㄓ":"沛甄",
+  "ㄆㄔ":"跑車",
+  "ㄆㄕ":"噴水池",
+  "ㄆㄖ":"僕人",
+  "ㄆㄗ":"盤子",
+  "ㄆㄘ":"泡菜",
+  "ㄆㄙ":"披薩",
+  "ㄆㄧ":"培因",
+  "ㄆㄨ":"蹼",
+  "ㄆㄩ":"珮瑜",
+  "ㄇㄅ":"抹布",
+  "ㄇㄆ":"門票",
+  "ㄇㄈ":"魔法",
+  "ㄇㄉ":"穆顛",
+  "ㄇㄊ":"饅頭",
+  "ㄇㄋ":"美乃滋",
+  "ㄇㄌ":"妙麗",
+  "ㄇㄍ":"蘑菇",
+  "ㄇㄎ":"麥克風",
+  "ㄇㄏ":"獼猴",
+  "ㄇㄐ":"梅酒",
+  "ㄇㄑ":"墨裘瑞",
+  "ㄇㄒ":"摩西",
+  "ㄇㄓ":"穆扎",
+  "ㄇㄔ":"ㄇㄔ",
+  "ㄇㄕ":"麻糬",
+  "ㄇㄖ":"馬肉",
+  "ㄇㄗ":"帽子",
+  "ㄇㄘ":"迷彩",
+  "ㄇㄙ":"摩斯",
+  "ㄇㄧ":"咪咪",
+  "ㄇㄨ":"迷霧",
+  "ㄇㄩ":"滿月",
+  "ㄈㄅ":"奜波",
+  "ㄈㄆ":"肥婆",
+  "ㄈㄇ":"放牧雞",
+  "ㄈㄉ":"飯店",
+  "ㄈㄊ":"福特",
+  "ㄈㄋ":"蜂鳥",
+  "ㄈㄌ":"風鈴",
+  "ㄈㄍ":"楓之谷",
+  "ㄈㄎ":"方塊",
+  "ㄈㄏ":"粉紅豬",
+  "ㄈㄐ":"飛機",
+  "ㄈㄑ":"番茄",
+  "ㄈㄒ":"發酵",
+  "ㄈㄓ":"飛豬",
+  "ㄈㄔ":"風車",
+  "ㄈㄕ":"番薯",
+  "ㄈㄖ":"肥肉",
+  "ㄈㄗ":"房子",
+  "ㄈㄘ":"發財金",
+  "ㄈㄙ":"佛寺",
+  "ㄈㄧ":"發炎",
+  "ㄈㄨ":"廢物",
+  "ㄈㄩ":"飛魚",
+  "ㄉㄅ":"電報",
+  "ㄉㄆ":"刀片",
+  "ㄉㄇ":"玳瑁",
+  "ㄉㄈ":"豆腐",
+  "ㄉㄊ":"帶土",
+  "ㄉㄋ":"電腦",
+  "ㄉㄌ":"多蘭戒",
+  "ㄉㄍ":"豆干",
+  "ㄉㄎ":"雕刻",
+  "ㄉㄏ":"頂好",
+  "ㄉㄐ":"獨角獸",
+  "ㄉㄑ":"地球",
+  "ㄉㄒ":"大象",
+  "ㄉㄓ":"地震",
+  "ㄉㄔ":"豆豉",
+  "ㄉㄕ":"電視",
+  "ㄉㄖ":"敵人",
+  "ㄉㄗ":"刀子",
+  "ㄉㄘ":"稻草",
+  "ㄉㄙ":"大蒜",
+  "ㄉㄧ":"電影",
+  "ㄉㄨ":"毒",
+  "ㄉㄩ":"釣魚",
+  "ㄊㄅ":"淘寶",
+  "ㄊㄆ":"天平",
+  "ㄊㄇ":"兔姆",
+  "ㄊㄈ":"頭髮",
+  "ㄊㄉ":"陶笛",
+  "ㄊㄋ":"臺南",
+  "ㄊㄌ":"土龍",
+  "ㄊㄍ":"土狗",
+  "ㄊㄎ":"坦克",
+  "ㄊㄏ":"鵜鶘",
+  "ㄊㄐ":"土雞",
+  "ㄊㄑ":"天氣",
+  "ㄊㄒ":"土星",
+  "ㄊㄓ":"土著",
+  "ㄊㄔ":"鐵鎚",
+  "ㄊㄕ":"天使",
+  "ㄊㄖ":"天仁",
+  "ㄊㄗ":"兔子",
+  "ㄊㄘ":"陶瓷",
+  "ㄊㄙ":"吐司",
+  "ㄊㄧ":"太陽",
+  "ㄊㄨ":"禿",
+  "ㄊㄩ":"桃園",
+  "ㄋㄅ":"牛逼",
+  "ㄋㄆ":"牛排",
+  "ㄋㄇ":"奶媽",
+  "ㄋㄈ":"農夫",
+  "ㄋㄉ":"腦袋",
+  "ㄋㄊ":"濃湯",
+  "ㄋㄌ":"奶酪",
+  "ㄋㄍ":"尼哥",
+  "ㄋㄎ":"內褲",
+  "ㄋㄏ":"你好",
+  "ㄋㄐ":"牛角",
+  "ㄋㄑ":"奶球",
+  "ㄋㄒ":"奶昔",
+  "ㄋㄓ":"鬧鐘",
+  "ㄋㄔ":"奶茶",
+  "ㄋㄕ":"奶霜",
+  "ㄋㄖ":"鳥人",
+  "ㄋㄗ":"奶子",
+  "ㄋㄘ":"納粹",
+  "ㄋㄙ":"奶酥",
+  "ㄋㄧ":"奶油",
+  "ㄋㄨ":"鳥窩",
+  "ㄋㄩ":"鳥園",
+  "ㄌㄅ":"蘿蔔",
+  "ㄌㄆ":"老皮",
+  "ㄌㄇ":"雷姆",
+  "ㄌㄈ":"老夫",
+  "ㄌㄉ":"綠豆",
+  "ㄌㄊ":"輪胎",
+  "ㄌㄋ":"藍鳥",
+  "ㄌㄍ":"欄杆",
+  "ㄌㄎ":"林口",
+  "ㄌㄏ":"老虎",
+  "ㄌㄐ":"辣椒",
+  "ㄌㄑ":"籃球",
+  "ㄌㄒ":"鹿翔",
+  "ㄌㄓ":"蠟燭",
+  "ㄌㄔ":"綠茶",
+  "ㄌㄕ":"老師",
+  "ㄌㄖ":"藍染",
+  "ㄌㄗ":"籠子",
+  "ㄌㄘ":"裸辭",
+  "ㄌㄙ":"蘆筍",
+  "ㄌㄧ":"李小龍",
+  "ㄌㄨ":"鹿",
+  "ㄌㄩ":"鯉魚",
+  "ㄍㄅ":"戈巴契夫",
+  "ㄍㄆ":"股票",
+  "ㄍㄇ":"鬼門",
+  "ㄍㄈ":"高飛",
+  "ㄍㄉ":"戈登",
+  "ㄍㄊ":"鍋貼",
+  "ㄍㄋ":"瓜農",
+  "ㄍㄌ":"咖哩",
+  "ㄍㄎ":"國考",
+  "ㄍㄏ":"國會",
+  "ㄍㄐ":"歌姬",
+  "ㄍㄑ":"枸杞",
+  "ㄍㄒ":"高雄",
+  "ㄍㄓ":"果汁",
+  "ㄍㄔ":"公車",
+  "ㄍㄕ":"股市",
+  "ㄍㄖ":"GOGORO",
+  "ㄍㄗ":"鴿子",
+  "ㄍㄘ":"棺材",
+  "ㄍㄙ":"高速公路",
+  "ㄍㄧ":"公益",
+  "ㄍㄨ":"貢丸",
+  "ㄍㄩ":"鮭魚",
+  "ㄎㄅ":"靠杯",
+  "ㄎㄆ":"柯P",
+  "ㄎㄇ":"Cama",
+  "ㄎㄈ":"咖啡",
+  "ㄎㄉ":"卡丁車",
+  "ㄎㄊ":"卡通",
+  "ㄎㄋ":"柯南",
+  "ㄎㄌ":"可樂",
+  "ㄎㄍ":"凱哥",
+  "ㄎㄏ":"葵花子",
+  "ㄎㄐ":"柯基",
+  "ㄎㄑ":"孔雀",
+  "ㄎㄒ":"烤箱",
+  "ㄎㄓ":"口罩",
+  "ㄎㄔ":"卡車",
+  "ㄎㄕ":"考試",
+  "ㄎㄖ":"烤肉",
+  "ㄎㄗ":"孔子",
+  "ㄎㄘ":"庫存",
+  "ㄎㄙ":"凱撒",
+  "ㄎㄧ":"烤鴨",
+  "ㄎㄨ":"苦無",
+  "ㄎㄩ":"客運",
+  "ㄏㄅ":"漢堡",
+  "ㄏㄆ":"虎皮",
+  "ㄏㄇ":"花媽",
+  "ㄏㄈ":"燴飯",
+  "ㄏㄉ":"紅豆",
+  "ㄏㄊ":"火腿",
+  "ㄏㄋ":"黃牛",
+  "ㄏㄌ":"葫蘆",
+  "ㄏㄍ":"海龜",
+  "ㄏㄎ":"海克斯",
+  "ㄏㄐ":"紅椒",
+  "ㄏㄑ":"火球",
+  "ㄏㄒ":"海嘯",
+  "ㄏㄓ":"護照",
+  "ㄏㄔ":"紅茶",
+  "ㄏㄕ":"和尚",
+  "ㄏㄖ":"紅肉",
+  "ㄏㄗ":"盒子",
+  "ㄏㄘ":"核磁",
+  "ㄏㄙ":"核四",
+  "ㄏㄧ":"后羿",
+  "ㄏㄨ":"皓瑋",
+  "ㄏㄩ":"花園",
+  "ㄐㄅ":"肌八",
+  "ㄐㄆ":"雞排",
+  "ㄐㄇ":"金門",
+  "ㄐㄈ":"基輔",
+  "ㄐㄉ":"基德",
+  "ㄐㄊ":"吉他",
+  "ㄐㄋ":"吉拿棒",
+  "ㄐㄌ":"基隆",
+  "ㄐㄍ":"金狗",
+  "ㄐㄎ":"雞塊",
+  "ㄐㄏ":"菊花",
+  "ㄐㄑ":"機器",
+  "ㄐㄒ":"救星",
+  "ㄐㄓ":"雞汁",
+  "ㄐㄔ":"雞翅",
+  "ㄐㄕ":"金沙",
+  "ㄐㄖ":"巨人",
+  "ㄐㄗ":"橘子",
+  "ㄐㄘ":"韭菜",
+  "ㄐㄙ":"雞絲",
+  "ㄐㄧ":"吉醫卡哇",
+  "ㄐㄨ":"吉娃娃",
+  "ㄐㄩ":"鯨魚",
+  "ㄑㄅ":"錢包",
+  "ㄑㄆ":"旗袍",
+  "ㄑㄇ":"球帽",
+  "ㄑㄈ":"青峰",
+  "ㄑㄉ":"球隊",
+  "ㄑㄊ":"橋頭",
+  "ㄑㄋ":"青鳥",
+  "ㄑㄌ":"全聯",
+  "ㄑㄍ":"乞丐",
+  "ㄑㄎ":"秋葵",
+  "ㄑㄏ":"七海",
+  "ㄑㄐ":"全家",
+  "ㄑㄒ":"球星",
+  "ㄑㄓ":"旗幟",
+  "ㄑㄔ":"球池",
+  "ㄑㄕ":"騎士",
+  "ㄑㄖ":"窮人",
+  "ㄑㄗ":"妻子",
+  "ㄑㄘ":"芹菜",
+  "ㄑㄙ":"起司",
+  "ㄑㄧ":"奇異果",
+  "ㄑㄨ":"青蛙",
+  "ㄑㄩ":"琦玉",
+  "ㄒㄅ":"小波",
+  "ㄒㄆ":"削皮",
+  "ㄒㄇ":"熊姆",
+  "ㄒㄈ":"小夫",
+  "ㄒㄉ":"新店",
+  "ㄒㄊ":"小台",
+  "ㄒㄋ":"鮮奶",
+  "ㄒㄌ":"小蘭",
+  "ㄒㄍ":"小高",
+  "ㄒㄎ":"小葵",
+  "ㄒㄏ":"小花",
+  "ㄒㄐ":"小雞",
+  "ㄒㄑ":"小倩",
+  "ㄒㄓ":"小智",
+  "ㄒㄔ":"香腸",
+  "ㄒㄕ":"學生",
+  "ㄒㄖ":"蝦仁",
+  "ㄒㄗ":"心臟",
+  "ㄒㄘ":"仙草",
+  "ㄒㄙ":"香蒜",
+  "ㄒㄧ":"習",
+  "ㄒㄨ":"新聞",
+  "ㄒㄩ":"鱈魚",
+  "ㄓㄅ":"裝備",
+  "ㄓㄆ":"照片",
+  "ㄓㄇ":"正妹",
+  "ㄓㄈ":"脂肪",
+  "ㄓㄉ":"Joeden",
+  "ㄓㄊ":"鑄鐵鍋",
+  "ㄓㄋ":"珍奶",
+  "ㄓㄌ":"蟑螂",
+  "ㄓㄍ":"知更鳥",
+  "ㄓㄎ":"竹科",
+  "ㄓㄏ":"彰化",
+  "ㄓㄐ":"豬腳",
+  "ㄓㄑ":"中秋",
+  "ㄓㄒ":"爭鮮",
+  "ㄓㄔ":"直尺",
+  "ㄓㄕ":"鐘碩",
+  "ㄓㄖ":"真人",
+  "ㄓㄗ":"桌子",
+  "ㄓㄘ":"招財貓",
+  "ㄓㄙ":"竹筍",
+  "ㄓㄧ":"豬油",
+  "ㄓㄨ":"植物",
+  "ㄓㄩ":"章魚",
+  "ㄔㄅ":"翅膀",
+  "ㄔㄆ":"川普",
+  "ㄔㄇ":"炒麵",
+  "ㄔㄈ":"炒飯",
+  "ㄔㄉ":"炒蛋",
+  "ㄔㄊ":"池塘",
+  "ㄔㄋ":"處男",
+  "ㄔㄌ":"窗簾",
+  "ㄔㄍ":"唇膏",
+  "ㄔㄎ":"乘客",
+  "ㄔㄏ":"車禍",
+  "ㄔㄐ":"吃雞",
+  "ㄔㄑ":"柴犬",
+  "ㄔㄒ":"觸鬚",
+  "ㄔㄓ":"船長",
+  "ㄔㄕ":"池上",
+  "ㄔㄖ":"超人",
+  "ㄔㄗ":"車子",
+  "ㄔㄘ":"出草",
+  "ㄔㄙ":"沈思",
+  "ㄔㄧ":"初音",
+  "ㄔㄨ":"船屋",
+  "ㄔㄩ":"楚瑜",
+  "ㄕㄅ":"水壩",
+  "ㄕㄆ":"水瓶",
+  "ㄕㄇ":"水門",
+  "ㄕㄈ":"生番",
+  "ㄕㄉ":"聖誕",
+  "ㄕㄊ":"水獺",
+  "ㄕㄋ":"水奶",
+  "ㄕㄌ":"水梨",
+  "ㄕㄍ":"水鬼",
+  "ㄕㄎ":"水庫",
+  "ㄕㄏ":"水壺",
+  "ㄕㄐ":"水餃",
+  "ㄕㄑ":"水球",
+  "ㄕㄒ":"水星",
+  "ㄕㄓ":"市長",
+  "ㄕㄔ":"市場",
+  "ㄕㄖ":"詩人",
+  "ㄕㄗ":"獅子",
+  "ㄕㄘ":"水草",
+  "ㄕㄙ":"生死",
+  "ㄕㄧ":"食鹽",
+  "ㄕㄨ":"書",
+  "ㄕㄩ":"朔月",
+  "ㄖㄅ":"日本",
+  "ㄖㄆ":"肉片",
+  "ㄖㄇ":"人魔",
+  "ㄖㄈ":"熱敷",
+  "ㄖㄉ":"瑞典",
+  "ㄖㄊ":"人體",
+  "ㄖㄋ":"乳牛",
+  "ㄖㄌ":"日曆",
+  "ㄖㄍ":"日晷",
+  "ㄖㄎ":"日客",
+  "ㄖㄏ":"日和",
+  "ㄖㄐ":"日記",
+  "ㄖㄑ":"乳清",
+  "ㄖㄒ":"日系",
+  "ㄖㄓ":"忍者",
+  "ㄖㄔ":"日出",
+  "ㄖㄕ":"瑞士",
+  "ㄖㄗ":"肉粽",
+  "ㄖㄘ":"人才",
+  "ㄖㄙ":"肉鬆",
+  "ㄖㄧ":"乳液",
+  "ㄖㄨ":"任務",
+  "ㄖㄩ":"日語",
+  "ㄗㄅ":"嘴巴",
+  "ㄗㄆ":"自拍",
+  "ㄗㄇ":"紫米",
+  "ㄗㄈ":"祖父",
+  "ㄗㄉ":"子彈",
+  "ㄗㄊ":"佐藤",
+  "ㄗㄋ":"阻尼",
+  "ㄗㄌ":"葬禮",
+  "ㄗㄍ":"子宮",
+  "ㄗㄎ":"糟糠",
+  "ㄗㄏ":"宗漢",
+  "ㄗㄐ":"紫禁城",
+  "ㄗㄑ":"足球",
+  "ㄗㄒ":"造型師",
+  "ㄗㄓ":"佐助",
+  "ㄗㄔ":"嘴唇",
+  "ㄗㄕ":"鑽石",
+  "ㄗㄖ":"自然之力",
+  "ㄗㄘ":"雜草",
+  "ㄗㄙ":"紫蘇",
+  "ㄗㄧ":"作業",
+  "ㄗㄨ":"租屋",
+  "ㄗㄩ":"子瑜",
+  "ㄘㄅ":"草本茶",
+  "ㄘㄆ":"草皮",
+  "ㄘㄇ":"草莓",
+  "ㄘㄈ":"磁浮",
+  "ㄘㄉ":"蔥蛋",
+  "ㄘㄊ":"菜頭",
+  "ㄘㄋ":"菜鳥",
+  "ㄘㄌ":"叢林",
+  "ㄘㄍ":"菜瓜布",
+  "ㄘㄎ":"刺客",
+  "ㄘㄏ":"蔥花",
+  "ㄘㄐ":"慈濟",
+  "ㄘㄑ":"彩券",
+  "ㄘㄒ":"草蝦",
+  "ㄘㄓ":"曹長",
+  "ㄘㄔ":"磁場",
+  "ㄘㄕ":"草繩",
+  "ㄘㄖ":"草人",
+  "ㄘㄗ":"村子",
+  "ㄘㄙ":"廁所",
+  "ㄘㄧ":"蒼蠅",
+  "ㄘㄨ":"草屋",
+  "ㄘㄩ":"草原",
+  "ㄙㄅ":"散步",
+  "ㄙㄆ":"酥皮",
+  "ㄙㄇ":"寺廟",
+  "ㄙㄈ":"私房錢",
+  "ㄙㄉ":"賽德克",
+  "ㄙㄊ":"蒜頭",
+  "ㄙㄋ":"蒜泥",
+  "ㄙㄌ":"索隆",
+  "ㄙㄍ":"絲瓜",
+  "ㄙㄎ":"Sukiya",
+  "ㄙㄏ":"四海遊龍",
+  "ㄙㄐ":"司機",
+  "ㄙㄑ":"小琪",
+  "ㄙㄒ":"蘇喜",
+  "ㄙㄓ":"三隻小豬",
+  "ㄙㄔ":"三重",
+  "ㄙㄖ":"死人",
+  "ㄙㄗ":"塞子",
+  "ㄙㄘ":"三層肉",
+  "ㄙㄧ":"三一殺手",
+  "ㄙㄨ":"蘇",
+  "ㄙㄩ":"死魚",
+  "ㄧㄅ":"伊布",
+  "ㄧㄆ":"一片",
+  "ㄧㄇ":"螢幕",
+  "ㄧㄈ":"衣服",
+  "ㄧㄉ":"胰島素",
+  "ㄧㄊ":"油條",
+  "ㄧㄋ":"野鳥",
+  "ㄧㄌ":"一嵐拉麵",
+  "ㄧㄍ":"牙膏",
+  "ㄧㄎ":"牙科",
+  "ㄧㄏ":"煙火",
+  "ㄧㄐ":"眼鏡",
+  "ㄧㄑ":"眼球",
+  "ㄧㄒ":"遊戲boy",
+  "ㄧㄓ":"伊織",
+  "ㄧㄔ":"郵差",
+  "ㄧㄕ":"夜市",
+  "ㄧㄗ":"椅子",
+  "ㄧㄘ":"洋蔥",
+  "ㄧㄙ":"以斯",
+  "ㄧㄨ":"鸚鵡",
+  "ㄧㄩ":"魷魚",
+  "ㄨㄅ":"UBER",
+  "ㄨㄆ":"巫婆",
+  "ㄨㄇ":"烏梅",
+  "ㄨㄈ":"王妃",
+  "ㄨㄉ":"豌豆",
+  "ㄨㄊ":"五條",
+  "ㄨㄋ":"文鳥",
+  "ㄨㄌ":"烏來",
+  "ㄨㄍ":"吳哥窟",
+  "ㄨㄎ":"悟空",
+  "ㄨㄏ":"舞會",
+  "ㄨㄐ":"無極",
+  "ㄨㄑ":"溫泉",
+  "ㄨㄒ":"威秀",
+  "ㄨㄓ":"伊織",
+  "ㄨㄔ":"文昌帝君",
+  "ㄨㄕ":"衛生紙",
+  "ㄨㄖ":"微軟",
+  "ㄨㄗ":"丸子",
+  "ㄨㄘ":"晚餐",
+  "ㄨㄙ":"烏薩其",
+  "ㄨㄧ":"烏鴉",
+  "ㄨㄩ":"鮪魚",
+  "ㄩㄅ":"元寶",
+  "ㄩㄆ":"魚皮",
+  "ㄩㄇ":"玉米",
+  "ㄩㄈ":"元富",
+  "ㄩㄉ":"遠東",
+  "ㄩㄊ":"雲吞",
+  "ㄩㄋ":"允農",
+  "ㄩㄌ":"郁嵐",
+  "ㄩㄍ":"圓規",
+  "ㄩㄎ":"月刊",
+  "ㄩㄏ":"約翰",
+  "ㄩㄐ":"員警",
+  "ㄩㄑ":"月琴",
+  "ㄩㄒ":"雨靴",
+  "ㄩㄓ":"宇宙",
+  "ㄩㄔ":"魚叉",
+  "ㄩㄕ":"玉山",
+  "ㄩㄖ":"傭人",
+  "ㄩㄗ":"月子",
+  "ㄩㄘ":"漁村",
+  "ㄩㄙ":"雨傘",
+  "ㄩㄧ":"魚油",
+  "ㄩㄨ":"漁網",
+  "ㄙㄕ":"速食",
+  "ㄧㄖ":"亞人"
+};
+
+function fetchMemoTable(){
+  memoTable = MEMO_DATA;
+  const count = Object.keys(memoTable).length;
+  document.getElementById("memo-status").textContent=`✓ ${count} 筆`;
+  document.getElementById("memo-status").className="status-pill status-ok";
+  renderRef();
+  if(currentTab==="recognition") nextQuiz();
+}
+
+// ── 辨識練習：建立題目池 ───────────────────────
+// 題目 = 每一個注音「對組合」（2個注音的 pair），從 memoTable 的 key 來
+// 但要過濾出屬於當前 pieceMode 的組合
+function getAllPairs(){
+  const pool=[], seen=new Set();
+  function addPieces(pieces){
+    pieces.forEach(p=>{
+      for(let i=0;i<p.z.length;i++){
+        for(let j=0;j<p.z.length;j++){
+          if(i===j) continue;
+          const key=p.z[i]+p.z[j];
+          if(seen.has(key)) continue;
+          seen.add(key);
+          const word=memoTable[key];
+          if(word) pool.push({pair:key, word});
+        }
+      }
+    });
+  }
+  addPieces(CORNERS);
+  addPieces(EDGES);
+  return pool;
+}
+
+function nextQuiz(){
+  const pool=getAllPairs();
+  if(pool.length===0){
+    document.getElementById("quiz-pair").textContent="—";
+    document.getElementById("quiz-input").placeholder="等待記憶表載入...";
+    document.getElementById("quiz-no-memo").textContent=
+      Object.keys(memoTable).length===0 ? "記憶表尚未載入，請稍候" : "此模式無符合題目";
+    return;
+  }
+  document.getElementById("quiz-input").placeholder="輸入名詞";
+  document.getElementById("quiz-no-memo").textContent="";
+  // avoid repeating same pair twice in a row
+  let item;
+  do { item=pool[Math.floor(Math.random()*pool.length)]; }
+  while(pool.length>1 && quizCurrent && item.pair===quizCurrent.pair);
+  quizCurrent=item;
+
+  document.getElementById("quiz-pair").textContent=item.pair;
+  document.getElementById("quiz-no-memo").textContent="";
+  const inp=document.getElementById("quiz-input");
+  inp.value=""; inp.className="word-input"; inp.disabled=false;
+  document.getElementById("quiz-result").innerHTML="";
+  document.getElementById("quiz-confirm").textContent="確認";
+  document.getElementById("quiz-confirm").disabled=true;
+  delete document.getElementById("quiz-confirm").dataset.done;
+  document.getElementById("quiz-confirm").onclick=checkQuiz;
+  highlightZhuyinPair(item.pair);
+  setTimeout(()=>inp.focus(),50);
+}
+
+function onQuizInput(){
+  document.getElementById("quiz-confirm").disabled=
+    !document.getElementById("quiz-input").value.trim();
+}
+function onQuizKey(e){
+  if(e.key!=="Enter") return;
+  const btn=document.getElementById("quiz-confirm");
+  if(!btn.disabled && !btn.dataset.done) checkQuiz();
+  else if(btn.dataset.done) nextQuiz();
+}
+function checkQuiz(){
+  const inp=document.getElementById("quiz-input");
+  const val=inp.value.trim();
+  const correct=quizCurrent.word;
+  const ok=(val===correct);
+
+  inp.classList.add(ok?"correct":"wrong");
+  inp.disabled=true;
+  stats[ok?"c":"w"]++;
+  document.getElementById("stat-correct").textContent=stats.c;
+  document.getElementById("stat-wrong").textContent=stats.w;
+
+  const resultEl=document.getElementById("quiz-result");
+  if(ok){
+    resultEl.innerHTML=`<div class="result-correct">✓ 正確！</div>`;
+  } else {
+    resultEl.innerHTML=`<div class="result-wrong">✗ 答案是：<span class="result-answer">${correct}</span></div>`;
+  }
+
+  const btn=document.getElementById("quiz-confirm");
+  btn.textContent="下一題 →"; btn.dataset.done="1"; btn.disabled=false;
+  btn.onclick=nextQuiz;
+}
+
+// ── Memo ───────────────────────────────────────
+function getSeq(pieces,buf){return pieces.filter(p=>p.id!==buf).map(p=>p.z[0]);}
+function makePairs(seq){
+  const r=[];
+  for(let i=0;i<seq.length;i+=2){
+    const a=seq[i],b=seq[i+1]||"";
+    r.push({a,b,word:memoTable[a+b]||memoTable[b+a]||""});
+  }
+  return r;
+}
+function renderPairs(pairs,id){
+  document.getElementById(id).innerHTML=pairs.map(p=>`
+    <div class="pair-card">
+      <div class="pair-zh">${p.a}${p.b}</div>
+      ${p.word?`<div class="pair-word">${p.word}</div>`:""}
+    </div>`).join("");
+}
+function startMemoTimer(){
+  clearInterval(memoTimer);memoMs=0;
+  memoTimer=setInterval(()=>{memoMs+=100;document.getElementById("timer-display").textContent=fmtTime(memoMs);},100);
+}
+function stopMemo(){
+  clearInterval(memoTimer);memoFinalMs=memoMs;
+  showMemoPhase("input");
+  const cSeq=getSeq(CORNERS,CORNER_BUFFER),eSeq=getSeq(EDGES,EDGE_BUFFER);
+  document.getElementById("corner-input-label").textContent=`角塊（${cSeq.length} 個注音）`;
+  document.getElementById("edge-input-label").textContent=`邊塊（${eSeq.length} 個注音）`;
+  setTimeout(()=>document.getElementById("input-corner")?.focus(),50);
+}
+function checkMemo(){
+  showMemoPhase("result");
+  document.getElementById("memo-time-result").textContent=fmtTime(memoFinalMs);
+  const cSeq=getSeq(CORNERS,CORNER_BUFFER),eSeq=getSeq(EDGES,EDGE_BUFFER);
+  renderDiff(cSeq,document.getElementById("input-corner").value,"diff-corner");
+  renderDiff(eSeq,document.getElementById("input-edge").value,"diff-edge");
+
+}
+function renderDiff(correct,input,id){
+  const tokens=[...input.replace(/\s/g,"")];
+  document.getElementById(id).innerHTML=correct.map((z,i)=>
+    `<span class="diff-chip ${tokens[i]===z?"ok":"bad"}">${z}</span>`).join("");
+}
+function showMemoPhase(phase){
+  ["memo","input","result"].forEach(p=>
+    document.getElementById(`memo-phase-${p}`).style.display=p===phase?"":"none");
+  if(phase==="memo"){
+    renderPairs(makePairs(getSeq(CORNERS,CORNER_BUFFER)),"corner-pairs");
+    renderPairs(makePairs(getSeq(EDGES,EDGE_BUFFER)),"edge-pairs");
+
+    document.getElementById("input-corner").value="";
+    document.getElementById("input-edge").value="";
+    startMemoTimer();
+  }
+}
+function fmtTime(ms){const s=Math.floor(ms/1000);return`${Math.floor(s/60)?Math.floor(s/60)+"m ":""}${s%60}.${Math.floor((ms%1000)/100)}s`;}
+
+// ── 參考表 accordion ────────────────────────────
+function renderRef(){
+  // Build lookup: zhuyin char → all pieces that have it
+  const allPieces = [
+    ...CORNERS.map(p=>({...p,kind:'corner'})),
+    ...EDGES.map(p=>({...p,kind:'edge'}))
+  ];
+
+  // Group MEMO_DATA keys by first char
+  const ZHUYIN_ORDER = ['ㄅ','ㄆ','ㄇ','ㄈ','ㄉ','ㄊ','ㄋ','ㄌ','ㄍ','ㄎ','ㄏ','ㄐ','ㄑ','ㄒ','ㄓ','ㄔ','ㄕ','ㄖ','ㄗ','ㄘ','ㄙ','ㄧ','ㄨ','ㄩ'];
+  const groups = {};
+  ZHUYIN_ORDER.forEach(z=>{ groups[z]=[]; });
+  for(const [key,word] of Object.entries(memoTable)){
+    const first = key[0];
+    if(groups[first]) groups[first].push({key,word});
+  }
+
+  const container = document.getElementById('ref-accordion');
+  container.innerHTML = '';
+  for(const z of ZHUYIN_ORDER){
+    const items = groups[z];
+    if(!items||!items.length) continue;
+    const div = document.createElement('div');
+    div.className = 'ref-group';
+    const btn = document.createElement('button');
+    btn.className = 'ref-group-header';
+    btn.innerHTML = `<span>${z}（${items.length} 筆）</span><span class="arrow">▼</span>`;
+    btn.onclick = ()=>{
+      btn.classList.toggle('open');
+      body.classList.toggle('open');
+    };
+    const body = document.createElement('div');
+    body.className = 'ref-group-body';
+    // Find sticker info for each key
+    const cards = items.map(({key,word})=>{
+      // find which piece+sticker index matches each char
+      const stickers = [...key].map(ch=>{
+        for(const p of allPieces){
+          const idx = p.z.indexOf(ch);
+          if(idx>=0) return {face:p.faces[idx],ch,pid:p.id};
+        }
+        return null;
+      }).filter(Boolean);
+      const dots = stickers.map(s=>`
+        <div class="ref-sticker">
+          <div class="ref-dot" style="background:${FACE_COLOR[s.face]}"></div>
+          <div class="ref-z">${s.ch}</div>
+        </div>`).join('');
+      return `<div class="ref-card">
+        <span class="ref-id" style="font-size:13px;letter-spacing:2px">${key}</span>
+        <div class="ref-stickers">${dots}</div>
+        <span class="ref-memo">${word}</span>
+      </div>`;
+    }).join('');
+    const grid = document.createElement('div');
+    grid.className = 'ref-grid';
+    grid.innerHTML = cards;
+    body.appendChild(grid);
+    div.appendChild(btn);
+    div.appendChild(body);
+    container.appendChild(div);
+  }
+}
+
+// ── 3D Cube for Quiz ────────────────────────────
+// Sticker position lookup: for each (face, sticker_index_on_face), 
+// return the {x,y,z} of the cubie and which BoxGeometry face index it's on
+// Face indices in BoxGeometry: +x=0(R), -x=1(L), +y=2(U), -y=3(D), +z=4(F), -z=5(B)
+// CORNERS layout: UFR=z[0..2] → faces[U,F,R]
+// For face U: row=(1-z_coord), col=(x_coord+1)  → sticker index = row*3+col
+// We need to reverse: given face name and sticker index → cubie (x,y,z)
+
+// Build a map: zhuyin_char → [{cubiePos:{x,y,z}, faceIdx}]
+let ZHUYIN_STICKER_MAP = null;
+function buildStickerMap(){
+  if(ZHUYIN_STICKER_MAP) return;
+  ZHUYIN_STICKER_MAP = {};
+  const FI = {R:0,L:1,U:2,D:3,F:4,B:5}; // BoxGeometry face indices
+
+  // For each piece, each sticker: compute cubie position
+  const allPieces = [
+    ...CORNERS.map(p=>({...p,kind:'corner'})),
+    ...EDGES.map(p=>({...p,kind:'edge'}))
+  ];
+
+  allPieces.forEach(p=>{
+    p.z.forEach((zh, si)=>{
+      const face = p.faces[si];
+      // Determine cubie x,y,z from piece id
+      const id = p.id;
+      const cx = id.includes('R')?1 : id.includes('L')?-1 : 0;
+      const cy = id.includes('U')?1 : id.includes('D')?-1 : 0;
+      const cz = id.includes('F')?1 : id.includes('B')?-1 : 0;
+      if(!ZHUYIN_STICKER_MAP[zh]) ZHUYIN_STICKER_MAP[zh]=[];
+      ZHUYIN_STICKER_MAP[zh].push({cx,cy,cz,face,faceIdx:FI[face]});
+    });
+  });
+}
+
+let qRenderer=null, qAF=null, qScene=null, qCam=null;
+let qDragging=false, qPrevX=0, qPrevY=0, qRotX=0.5, qRotY=0.0;
+let qCubies=[]; // {mesh, cx,cy,cz}
+
+function initQuizCube(){
+  buildStickerMap();
+  const canvas = document.getElementById('quiz-cube-canvas');
+  const wrap = document.getElementById('quiz-cube-wrap');
+  if(!window.THREE){ wrap.style.display='none'; return; }
+  const T = window.THREE;
+
+  if(qRenderer){ cancelAnimationFrame(qAF); qRenderer.dispose(); }
+
+  const W = wrap.clientWidth||320;
+  const H = Math.round(W*0.72);
+  canvas.width = W; canvas.height = H;
+  canvas.style.height = H+'px';
+
+  qScene = new T.Scene(); qScene.background = new T.Color(0xffffff);
+  qCam = new T.PerspectiveCamera(42, W/H, 0.1, 100);
+  qCam.position.set(4.2, 3.6, 4.2); qCam.lookAt(0,0,0);
+  qRenderer = new T.WebGLRenderer({canvas, antialias:true});
+  qRenderer.setSize(W,H); qRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+
+  // Build cube
+  const COLS = {U:0xf0f0f0,D:0xf5c518,F:0x2d9e4f,B:0x457b9d,R:0xe63946,L:0xff7b1c};
+  const FI_BOX = {R:0,L:1,U:2,D:3,F:4,B:5};
+  qCubies = [];
+  const grp = new T.Group();
+
+  for(let x=-1;x<=1;x++) for(let y=-1;y<=1;y++) for(let z=-1;z<=1;z++){
+    if(!x&&!y&&!z) continue;
+    const isCenterPiece = (x===0&&y===0)||(x===0&&z===0)||(y===0&&z===0);
+    const geo = new T.BoxGeometry(0.93,0.93,0.93);
+    const mats = Array(6).fill(null).map(()=>
+      new T.MeshStandardMaterial({color:0x181818,transparent:true,opacity:0.15,roughness:0.6})
+    );
+    const asgn=[x===1?'R':null,x===-1?'L':null,y===1?'U':null,y===-1?'D':null,z===1?'F':null,z===-1?'B':null];
+    asgn.forEach((face,i)=>{
+      if(!face) return;
+      if(isCenterPiece){
+        // Center stickers: always full brightness
+        mats[i] = new T.MeshStandardMaterial({
+          color: COLS[face], transparent:false, opacity:1.0, roughness:0.3
+        });
+      } else {
+        // Edge/corner stickers: start dim
+        mats[i] = new T.MeshStandardMaterial({
+          color: COLS[face], transparent:true, opacity:0.22, roughness:0.4
+        });
+      }
+    });
+    const mesh = new T.Mesh(geo,mats);
+    mesh.position.set(x*1.02,y*1.02,z*1.02);
+    grp.add(mesh);
+    // Only track non-center pieces for highlight toggling
+    if(!isCenterPiece) qCubies.push({mesh,cx:x,cy:y,cz:z,mats,asgn});
+  }
+  qScene.add(grp);
+  qScene.add(new T.AmbientLight(0xffffff,0.7));
+  const dl=new T.DirectionalLight(0xffffff,0.9);dl.position.set(5,8,5);qScene.add(dl);
+
+  // Drag
+  const md=e=>{qDragging=true;qPrevX=e.clientX||e.touches[0].clientX;qPrevY=e.clientY||e.touches[0].clientY;};
+  const mm=e=>{
+    if(!qDragging)return;
+    const cx=e.clientX||(e.touches&&e.touches[0].clientX)||qPrevX;
+    const cy2=e.clientY||(e.touches&&e.touches[0].clientY)||qPrevY;
+    qRotY+=(cx-qPrevX)*0.012; qRotX+=(cy2-qPrevY)*0.012;
+
+    qPrevX=cx;qPrevY=cy2;
+  };
+  const mu=()=>{qDragging=false;};
+  canvas.addEventListener('mousedown',md);
+  window.addEventListener('mousemove',mm);
+  window.addEventListener('mouseup',mu);
+  canvas.addEventListener('touchstart',e=>{md(e);e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchmove',e=>{mm(e);e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchend',mu);
+
+  const animate=()=>{
+    qAF=requestAnimationFrame(animate);
+    grp.rotation.x=qRotX; grp.rotation.y=qRotY;
+    qRenderer.render(qScene,qCam);
+  };
+  animate();
+}
+
+function highlightZhuyinPair(pair){
+  if(!qCubies.length||!ZHUYIN_STICKER_MAP) return;
+  const T=window.THREE;
+  const COLS={U:0xf0f0f0,D:0xffd200,F:0x2d9e4f,B:0x457b9d,R:0xe63946,L:0xff7b1c};
+
+  // Gather all highlighted stickers: {cx,cy,cz,faceIdx}
+  const highlighted = new Set();
+  for(const ch of pair){
+    const stickers = ZHUYIN_STICKER_MAP[ch]||[];
+    stickers.forEach(s=>highlighted.add(`${s.cx},${s.cy},${s.cz},${s.faceIdx}`));
+  }
+
+  qCubies.forEach(({cx,cy,cz,mats,asgn})=>{
+    asgn.forEach((face,i)=>{
+      if(!face) return;
+      const key=`${cx},${cy},${cz},${i}`;
+      const isHit = highlighted.has(key);
+      mats[i].color.setHex(isHit ? COLS[face] : 0x111111);
+      mats[i].opacity = isHit ? 1.0 : 0.15;
+      mats[i].emissive = isHit ? new T.Color(COLS[face]).multiplyScalar(0.3) : new T.Color(0x000000);
+    });
+  });
+}
+
+
+// ── 指認 (Identify) ──────────────────────────────
+let idStats={c:0,w:0};
+let idCurrent=null; // {char, targets:[cornerTarget, edgeTarget]}
+let idAnswered=false;
+
+let idRenderer=null, idAF=null, idScene=null, idCam=null;
+let idDragging=false, idPrevX=0, idPrevY=0, idRotX=0.5, idRotY=0.0;
+let idCubies=[]; // {mesh,cx,cy,cz,mats,asgn}
+let idGroup=null;
+
+const ID_COLS_HEX={U:0xf0f0f0,D:0xf5c518,F:0x2d9e4f,B:0x457b9d,R:0xe63946,L:0xff7b1c};
+const ID_COLS_CSS={U:"#f0f0f0",D:"#f5c518",F:"#2d9e4f",B:"#457b9d",R:"#e63946",L:"#ff7b1c"};
+
+function initIdentifyCube(){
+  buildStickerMap();
+  const canvas=document.getElementById('id-cube-canvas');
+  const wrap=document.getElementById('id-cube-wrap');
+  if(!window.THREE){wrap.style.display='none';return;}
+  const T=window.THREE;
+
+  if(idRenderer){cancelAnimationFrame(idAF);idRenderer.dispose();}
+
+  const W=wrap.clientWidth||320;
+  const H=Math.round(W*0.72);
+  canvas.width=W;canvas.height=H;canvas.style.height=H+'px';
+
+  idScene=new T.Scene();idScene.background=new T.Color(0xffffff);
+  idCam=new T.PerspectiveCamera(42,W/H,0.1,100);
+  idCam.position.set(4.2,3.6,4.2);idCam.lookAt(0,0,0);
+  idRenderer=new T.WebGLRenderer({canvas,antialias:true});
+  idRenderer.setSize(W,H);idRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+
+  idCubies=[];
+  idGroup=new T.Group();
+
+  for(let x=-1;x<=1;x++) for(let y=-1;y<=1;y++) for(let z=-1;z<=1;z++){
+    if(!x&&!y&&!z) continue;
+    const isCenterPiece=(x===0&&y===0)||(x===0&&z===0)||(y===0&&z===0);
+    const geo=new T.BoxGeometry(0.93,0.93,0.93);
+    const mats=Array(6).fill(null).map(()=>
+      new T.MeshStandardMaterial({color:0x181818,transparent:true,opacity:0.15,roughness:0.6})
+    );
+    const asgn=[x===1?'R':null,x===-1?'L':null,y===1?'U':null,y===-1?'D':null,z===1?'F':null,z===-1?'B':null];
+    asgn.forEach((face,i)=>{
+      if(!face) return;
+      if(isCenterPiece){
+        mats[i]=new T.MeshStandardMaterial({color:ID_COLS_HEX[face],transparent:false,opacity:1.0,roughness:0.3});
+      } else {
+        // dim initially — will be lit up when hovered/clicked
+        mats[i]=new T.MeshStandardMaterial({color:ID_COLS_HEX[face],transparent:true,opacity:0.22,roughness:0.4});
+      }
+    });
+    const mesh=new T.Mesh(geo,mats);
+    mesh.position.set(x*1.02,y*1.02,z*1.02);
+    idGroup.add(mesh);
+    if(!isCenterPiece) idCubies.push({mesh,cx:x,cy:y,cz:z,mats,asgn});
+  }
+  idScene.add(idGroup);
+  idScene.add(new T.AmbientLight(0xffffff,0.7));
+  const dl=new T.DirectionalLight(0xffffff,0.9);dl.position.set(5,8,5);idScene.add(dl);
+
+  // Raycaster for click detection
+  const raycaster=new T.Raycaster();
+  const mouse=new T.Vector2();
+
+  function getCanvasXY(e){
+    const rect=canvas.getBoundingClientRect();
+    const cx2=(e.clientX||e.touches[0].clientX)-rect.left;
+    const cy2=(e.clientY||e.touches[0].clientY)-rect.top;
+    return [cx2,cy2];
+  }
+
+  // Drag
+  let idMouseDown=false;
+  const md=e=>{
+    idMouseDown=true;
+    idDragging=false;
+    const [x2,y2]=getCanvasXY(e);
+    idPrevX=x2;idPrevY=y2;
+  };
+  const mm=e=>{
+    if(!idMouseDown) return;
+    const [x2,y2]=getCanvasXY(e);
+    const dx=x2-idPrevX, dy=y2-idPrevY;
+    if(Math.abs(dx)>2||Math.abs(dy)>2) idDragging=true;
+    if(!idDragging) return;
+    idRotY+=dx*0.012; idRotX+=dy*0.012;
+    idPrevX=x2; idPrevY=y2;
+  };
+  const mu=e=>{
+    idMouseDown=false;
+    if(idDragging){idDragging=false;return;}
+    if(idAnswered) return;
+    // Click → raycast
+    const rect=canvas.getBoundingClientRect();
+    const ex=e.clientX||(e.changedTouches&&e.changedTouches[0].clientX);
+    const ey=e.clientY||(e.changedTouches&&e.changedTouches[0].clientY);
+    mouse.x=((ex-rect.left)/rect.width)*2-1;
+    mouse.y=-((ey-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse,idCam);
+
+    // Collect all face meshes with their cubie info
+    const meshes=idCubies.map(c=>c.mesh);
+    const hits=raycaster.intersectObjects(meshes);
+    if(!hits.length) return;
+
+    const hit=hits[0];
+    const faceIndex=Math.floor(hit.faceIndex/2); // BoxGeometry: 2 triangles per face
+    const mesh=hit.object;
+    const cubie=idCubies.find(c=>c.mesh===mesh);
+    if(!cubie) return;
+
+    handleIdentifyClick(cubie, faceIndex);
+  };
+
+  canvas.addEventListener('mousedown',md);
+  canvas.addEventListener('mousemove',mm);
+  canvas.addEventListener('mouseup',mu);
+  canvas.addEventListener('touchstart',e=>{idMouseDown=true;md(e);e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchmove',e=>{mm(e);e.preventDefault();},{passive:false});
+  canvas.addEventListener('touchend',e=>{idMouseDown=false;mu(e);e.preventDefault();},{passive:false});
+
+  const animate=()=>{
+    idAF=requestAnimationFrame(animate);
+    idGroup.rotation.x=idRotX;idGroup.rotation.y=idRotY;
+    idRenderer.render(idScene,idCam);
+  };
+  animate();
+}
+
+// idDone[0]=角塊已答, idDone[1]=邊塊已答
+let idDone=[false,false];
+
+function handleIdentifyClick(cubie, faceIndex){
+  if(!idCurrent || idAnswered) return;
+  const T=window.THREE;
+  const targets=idCurrent.targets; // [cornerTarget, edgeTarget]
+
+  // 判斷點到的是哪個 target（忽略已答的）
+  let hitIdx=-1;
+  for(let i=0;i<2;i++){
+    if(idDone[i]) continue;
+    const t=targets[i];
+    if(cubie.cx===t.cx && cubie.cy===t.cy && cubie.cz===t.cz && faceIndex===t.faceIdx){
+      hitIdx=i; break;
+    }
+  }
+
+  if(hitIdx===-1){
+    // 答錯：閃紅後恢復
+    idStats.w++;
+    document.getElementById("id-stat-wrong").textContent=idStats.w;
+    const cm=cubie.mats[faceIndex];
+    const saveHex=cm.color.getHex(), saveOp=cm.opacity;
+    cm.color.setHex(0xff3333); cm.opacity=1.0;
+    cm.emissive=new T.Color(0xff3333).multiplyScalar(0.5);
+    setTimeout(()=>{ cm.color.setHex(saveHex); cm.opacity=saveOp; cm.emissive.set(0x000000); },400);
+    idRenderStatus();
+    return;
+  }
+
+  // 答對
+  idStats.c++;
+  document.getElementById("id-stat-correct").textContent=idStats.c;
+  idDone[hitIdx]=true;
+
+  const t=targets[hitIdx];
+  const cm=cubie.mats[faceIndex];
+  cm.color.setHex(ID_COLS_HEX[t.faceName]);
+  cm.opacity=1.0;
+  cm.emissive=new T.Color(0x44ff88).multiplyScalar(0.5);
+
+  idRenderStatus();
+
+  if(idDone[0] && idDone[1]){
+    idAnswered=true;
+    document.getElementById("id-next-btn").style.display="inline-block";
+  }
+}
+
+function idRenderStatus(){
+  const resultEl=document.getElementById("id-result-area");
+  const labels=["角塊","邊塊"];
+  resultEl.innerHTML=idCurrent.targets.map((t,i)=>{
+    if(idDone[i])
+      return `<div class="result-correct">✓ ${labels[i]} — ${t.pieceId} (${t.faceName}面)</div>`;
+    else
+      return `<div style="color:var(--muted);font-size:13px;margin:2px 0">◯ ${labels[i]} — 尚未指出</div>`;
+  }).join("");
+}
+
+function idResetCubeColors(){
+  if(!idCubies.length) return;
+  const T=window.THREE;
+  idCubies.forEach(({mats,asgn})=>{
+    asgn.forEach((face,i)=>{
+      if(!face) return;
+      mats[i].color.setHex(ID_COLS_HEX[face]);
+      mats[i].opacity=0.22;
+      if(mats[i].emissive) mats[i].emissive.set(0x000000);
+    });
+  });
+}
+
+function idNextQuiz(){
+  buildStickerMap();
+  const FI={R:0,L:1,U:2,D:3,F:4,B:5};
+
+  // 建立每個注音字 → corner + edge 對應
+  const charMap={};
+  CORNERS.forEach(p=>{
+    p.z.forEach((zh,si)=>{
+      if(!charMap[zh]) charMap[zh]={};
+      const cx=p.id.includes('R')?1:p.id.includes('L')?-1:0;
+      const cy=p.id.includes('U')?1:p.id.includes('D')?-1:0;
+      const cz=p.id.includes('F')?1:p.id.includes('B')?-1:0;
+      charMap[zh].corner={char:zh,kind:"corner",pieceId:p.id,faceName:p.faces[si],faceIdx:FI[p.faces[si]],cx,cy,cz};
+    });
+  });
+  EDGES.forEach(p=>{
+    p.z.forEach((zh,si)=>{
+      if(!charMap[zh]) charMap[zh]={};
+      const cx=p.id.includes('R')?1:p.id.includes('L')?-1:0;
+      const cy=p.id.includes('U')?1:p.id.includes('D')?-1:0;
+      const cz=p.id.includes('F')?1:p.id.includes('B')?-1:0;
+      charMap[zh].edge={char:zh,kind:"edge",pieceId:p.id,faceName:p.faces[si],faceIdx:FI[p.faces[si]],cx,cy,cz};
+    });
+  });
+
+  // 只出有角塊又有邊塊的注音字
+  const pool=Object.entries(charMap)
+    .filter(([,v])=>v.corner&&v.edge)
+    .map(([ch,v])=>({char:ch, targets:[v.corner, v.edge]}));
+
+  let item;
+  do { item=pool[Math.floor(Math.random()*pool.length)]; }
+  while(pool.length>1 && idCurrent && item.char===idCurrent.char);
+
+  idCurrent=item;
+  idAnswered=false;
+  idDone=[false,false];
+
+  document.getElementById("id-quiz-char").textContent=item.char;
+  document.getElementById("id-next-btn").style.display="none";
+  idResetCubeColors();
+  idRenderStatus();
+}
+
+// ── UI ─────────────────────────────────────────
+function setTab(tab){
+  currentTab=tab;
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  ["recognition","identify","memo","ref"].forEach(t=>
+    document.getElementById(`tab-${t}`).style.display=t===tab?"":"none");
+  if(tab==="recognition") nextQuiz();
+  if(tab==="identify") idNextQuiz();
+  if(tab==="memo") showMemoPhase("memo");
+  if(tab==="ref") renderRef();
+}
+
+window.addEventListener("DOMContentLoaded",()=>{
+  renderRef();
+  fetchMemoTable();
+  initQuizCube();
+  initIdentifyCube();
+  nextQuiz();
+});
+</script>
+</body>
+</html>
