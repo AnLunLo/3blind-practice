@@ -16,9 +16,16 @@ export function useQuizSession(memoTable, filter) {
   const [lastCorrect, setLastCorrect] = useState(null);
 
   const nextQuestion = useCallback(() => {
-    let pool = getAllPairs(memoTable);
-    // 若有篩選，只保留 pair 包含該注音字的題目
-    if (filter) pool = pool.filter(({ pair }) => pair.includes(filter));
+    let pool;
+    if (filter) {
+      // 篩選模式：直接從 memoTable 取所有包含該注音字的 pair
+      pool = Object.entries(memoTable)
+        .filter(([pair]) => pair.includes(filter))
+        .map(([pair, word]) => ({ pair, word }));
+    } else {
+      // 全部模式：只出現在 piece 結構中的合法 pair
+      pool = getAllPairs(memoTable);
+    }
     if (!pool.length) { setCurrent(null); return; }
     let item;
     do { item = pool[Math.floor(Math.random() * pool.length)]; }
