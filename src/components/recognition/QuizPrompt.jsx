@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 export default function QuizPrompt({ current, phase, lastCorrect, onSubmit, onNext }) {
   const [input, setInput] = useState('');
   const inputRef = useRef(null);
+  const nextBtnRef = useRef(null);
 
   // Reset input and focus when new question arrives
   useEffect(() => {
@@ -10,12 +11,15 @@ export default function QuizPrompt({ current, phase, lastCorrect, onSubmit, onNe
       setInput('');
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [current, phase]);
+    // 答題後：若答對，自動 focus 下一題按鈕，讓 Enter 可以直接觸發
+    if (phase === 'answered' && lastCorrect) {
+      setTimeout(() => nextBtnRef.current?.focus(), 50);
+    }
+  }, [current, phase, lastCorrect]);
 
   function handleKey(e) {
     if (e.key !== 'Enter') return;
     if (phase === 'question' && input.trim()) onSubmit(input);
-    else if (phase === 'answered') onNext();
   }
 
   const inputClass = [
@@ -53,7 +57,7 @@ export default function QuizPrompt({ current, phase, lastCorrect, onSubmit, onNe
             確認
           </button>
         ) : (
-          <button className="btn-next" onClick={onNext}>下一題 →</button>
+          <button ref={nextBtnRef} className="btn-next" onClick={onNext}>下一題 →</button>
         )}
       </div>
     </div>
