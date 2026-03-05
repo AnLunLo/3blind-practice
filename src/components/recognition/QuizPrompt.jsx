@@ -11,8 +11,8 @@ export default function QuizPrompt({ current, phase, lastCorrect, onSubmit, onNe
       setInput('');
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-    // 答題後：若答對，自動 focus 下一題按鈕，讓 Enter 可以直接觸發
-    if (phase === 'answered' && lastCorrect) {
+    // 答題後：自動 focus 下一題按鈕，讓 Enter 可以直接觸發
+    if (phase === 'answered') {
       setTimeout(() => nextBtnRef.current?.focus(), 50);
     }
   }, [current, phase, lastCorrect]);
