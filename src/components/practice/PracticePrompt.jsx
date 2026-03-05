@@ -32,7 +32,6 @@ export default function PracticePrompt({ current, done }) {
       <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginBottom: '24px' }}>
         {groups.map(({ ch, kinds, doneIdxs }) => (
           <div key={ch} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '22px', color: 'var(--gold)', marginBottom: '6px' }}>{ch}</div>
             <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
               {kinds.map((kind, ki) => {
                 const isDone = done[doneIdxs[ki]];
