@@ -18,9 +18,9 @@ export function useQuizSession(memoTable, filter) {
   const nextQuestion = useCallback(() => {
     let pool;
     if (filter) {
-      // 篩選模式：直接從 memoTable 取所有包含該注音字的 pair
+      // 篩選模式：直接從 memoTable 取所有以該注音字開頭的 pair
       pool = Object.entries(memoTable)
-        .filter(([pair]) => pair.includes(filter))
+        .filter(([pair]) => pair.startsWith(filter))
         .map(([pair, word]) => ({ pair, word }));
     } else {
       // 全部模式：只出現在 piece 結構中的合法 pair
