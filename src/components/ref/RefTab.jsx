@@ -44,15 +44,6 @@ export default function RefTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        {overrideCount > 0 && (
-          <button
-            className="ref-reset-all-btn"
-            onClick={resetAll}
-            title={`重置全部 ${overrideCount} 筆自訂`}
-          >
-            全部重置（{overrideCount}）
-          </button>
-        )}
       </div>
 
       {isSearching ? (

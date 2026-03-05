@@ -86,7 +86,6 @@ main{padding:20px 16px}
 .ref-section-title{color:var(--muted);font-size:11px;letter-spacing:1px;margin-bottom:10px;margin-top:20px}
 .ref-section-title:first-child{margin-top:0}
 .ref-card{background:var(--bg3);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;border:1px solid var(--border)}
-.ref-card.has-override{border-color:var(--gold2)}
 .ref-id{font-family:'Space Mono',monospace;font-size:13px;min-width:36px;color:var(--gold);letter-spacing:1px}
 .ref-stickers{display:flex;gap:6px}
 .ref-sticker{text-align:center}

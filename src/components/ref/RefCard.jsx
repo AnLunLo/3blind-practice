@@ -60,7 +60,6 @@ export default function RefCard({ pair, word, hasOverride, onSave, onReset }) {
             >
               {word}
             </span>
-            {hasOverride && <span className="ref-override-badge" title="已自訂">★</span>}
             <button
               className="ref-card-edit-btn"
               onClick={() => setEditing(true)}
