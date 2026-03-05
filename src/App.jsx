@@ -4,13 +4,13 @@ import Header from './components/Header.jsx';
 import Nav from './components/Nav.jsx';
 import RecognitionTab from './components/recognition/RecognitionTab.jsx';
 import IdentifyTab from './components/identify/IdentifyTab.jsx';
-import MemoTab from './components/memo/MemoTab.jsx';
+import PracticeTab from './components/practice/PracticeTab.jsx';
 import RefTab from './components/ref/RefTab.jsx';
 
 export const MemoTableContext = createContext(null);
 export function useMemoTableCtx() { return useContext(MemoTableContext); }
 
-const TABS = ['recognition', 'identify', 'memo', 'ref'];
+const TABS = ['recognition', 'identify', 'practice', 'ref'];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('recognition');
@@ -27,7 +27,7 @@ export default function App() {
             <div key={tab} style={{ display: activeTab === tab ? '' : 'none' }}>
               {tab === 'recognition' && <RecognitionTab />}
               {tab === 'identify'    && <IdentifyTab />}
-              {tab === 'memo'        && <MemoTab />}
+              {tab === 'practice'    && <PracticeTab />}
               {tab === 'ref'         && <RefTab />}
             </div>
           ))}

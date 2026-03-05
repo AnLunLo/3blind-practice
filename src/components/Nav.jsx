@@ -1,7 +1,7 @@
 const TABS = [
   { id: 'recognition', icon: '◈', label: '辨識' },
   { id: 'identify',    icon: '◎', label: '指認' },
-  { id: 'memo',        icon: '◉', label: 'Memo' },
+  { id: 'practice',    icon: '◐', label: '練習' },
   { id: 'ref',         icon: '≡', label: '參考表' },
 ];
 
