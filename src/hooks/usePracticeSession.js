@@ -7,7 +7,7 @@ import { buildCharMap } from '../lib/zhuyinUtils.js';
  *
  * @param {object} memoTable
  */
-export function usePracticeSession(memoTable) {
+export function usePracticeSession(memoTable, filter = null) {
   const [current, setCurrent] = useState(null);
   // done[i] = true when the i-th target has been correctly clicked
   const [done, setDone] = useState([false, false, false, false]);
@@ -16,7 +16,10 @@ export function usePracticeSession(memoTable) {
 
   const nextQuestion = useCallback(() => {
     const charMap = buildCharMap();
-    const entries = Object.entries(memoTable);
+    const allEntries = Object.entries(memoTable);
+    const entries = filter
+      ? allEntries.filter(([pair]) => pair.startsWith(filter))
+      : allEntries;
     if (!entries.length) return;
 
     // Keep trying until we find a pair whose both chars have corner + edge
@@ -46,7 +49,7 @@ export function usePracticeSession(memoTable) {
     setCurrent({ pair, word, targets });
     setDone([false, false, false, false]);
     setAnswered(false);
-  }, [memoTable, current]);
+  }, [memoTable, filter, current]);
 
   /**
    * Returns { hit, hitIdx, faceName }
