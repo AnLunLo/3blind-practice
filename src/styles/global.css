@@ -138,3 +138,16 @@ main{padding:20px 16px}
 
 /* ── Identify ── */
 .id-sticker-hit{cursor:pointer;}
+
+/* ── Formula ── */
+.formula-toggle{display:flex;gap:8px;margin-bottom:20px}
+.formula-toggle-btn{flex:1;padding:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:#bbb;font-size:15px;font-family:'Noto Sans TC',sans-serif}
+.formula-toggle-btn.active{background:var(--gold2);border-color:var(--gold2);color:#000;font-weight:700}
+.formula-pairs-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.formula-pair-btn{padding:8px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:#bbb;font-size:15px;font-family:'Noto Sans TC',sans-serif;letter-spacing:2px;transition:background .12s,color .12s,border-color .12s}
+.formula-pair-btn:hover{border-color:var(--gold2);color:var(--gold)}
+.formula-pair-btn.active{background:var(--gold2);border-color:var(--gold2);color:#000;font-weight:700}
+.formula-detail{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:18px;margin-top:4px}
+.formula-detail-pair{font-size:36px;color:var(--gold);letter-spacing:6px;margin-bottom:6px;font-family:'Noto Sans TC',sans-serif}
+.formula-detail-word{font-size:20px;color:#ccc;margin-bottom:12px}
+.formula-detail-alg{font-family:'Space Mono',monospace;font-size:14px;color:#d0d0d0;line-height:1.6;word-break:break-all}
