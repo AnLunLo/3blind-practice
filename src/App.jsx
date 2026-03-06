@@ -6,11 +6,12 @@ import RecognitionTab from './components/recognition/RecognitionTab.jsx';
 import IdentifyTab from './components/identify/IdentifyTab.jsx';
 import PracticeTab from './components/practice/PracticeTab.jsx';
 import RefTab from './components/ref/RefTab.jsx';
+import FormulaTab from './components/formula/FormulaTab.jsx';
 
 export const MemoTableContext = createContext(null);
 export function useMemoTableCtx() { return useContext(MemoTableContext); }
 
-const TABS = ['recognition', 'identify', 'practice', 'ref'];
+const TABS = ['recognition', 'identify', 'practice', 'ref', 'formula'];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('recognition');
@@ -29,6 +30,7 @@ export default function App() {
               {tab === 'identify'    && <IdentifyTab />}
               {tab === 'practice'    && <PracticeTab />}
               {tab === 'ref'         && <RefTab />}
+              {tab === 'formula'     && <FormulaTab />}
             </div>
           ))}
         </main>
