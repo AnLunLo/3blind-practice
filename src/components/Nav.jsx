@@ -3,6 +3,7 @@ const TABS = [
   { id: 'identify',    icon: '◎', label: '指認' },
   { id: 'practice',    icon: '◐', label: '練習' },
   { id: 'ref',         icon: '≡', label: '參考表' },
+  { id: 'formula',    icon: '⊛', label: '公式' },
 ];
 
 export default function Nav({ activeTab, onTabChange }) {

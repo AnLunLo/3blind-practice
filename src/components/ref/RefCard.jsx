@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import { ALGO_DATA } from '../../data/algoData.js';
 
-export default function RefCard({ pair, word, hasOverride, onSave, onReset }) {
+export default function RefCard({ pair, word, hasOverride, onSave, onReset, onAlgoClick }) {
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState(word);
   const inputRef = useRef(null);
+  const hasAlgo = !!ALGO_DATA[pair];
 
   // Sync input when word changes externally
   useEffect(() => { setInputVal(word); }, [word]);
@@ -68,6 +70,15 @@ export default function RefCard({ pair, word, hasOverride, onSave, onReset }) {
           </>
         )}
       </div>
+
+      {/* Algorithm player button — only shown if this pair has an algorithm */}
+      {hasAlgo && onAlgoClick && (
+        <button
+          className="ref-algo-btn"
+          onClick={() => onAlgoClick(pair, word)}
+          title="展示還原公式動畫"
+        >▶</button>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import RefCard from './RefCard.jsx';
 
-export default function RefGroup({ initial, items, memoTable, hasOverride, onSave, onReset }) {
+export default function RefGroup({ initial, items, memoTable, hasOverride, onSave, onReset, onAlgoClick }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -22,6 +22,7 @@ export default function RefGroup({ initial, items, memoTable, hasOverride, onSav
                 hasOverride={hasOverride(key)}
                 onSave={onSave}
                 onReset={onReset}
+                onAlgoClick={onAlgoClick}
               />
             ))}
           </div>

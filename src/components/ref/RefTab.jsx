@@ -4,10 +4,12 @@ import { ZHUYIN_ORDER } from '../../data/constants.js';
 import { MEMO_DATA } from '../../data/memoData.js';
 import RefGroup from './RefGroup.jsx';
 import RefCard from './RefCard.jsx';
+import AlgoPanel from './AlgoPanel.jsx';
 
 export default function RefTab() {
   const { memoTable, updateEntry, resetEntry, resetAll, hasOverride, overrideCount } = useMemoTableCtx();
   const [search, setSearch] = useState('');
+  const [selectedPair, setSelectedPair] = useState(null);  // { pair, word }
 
   // Build groups for accordion
   const groups = useMemo(() => {
@@ -30,6 +32,12 @@ export default function RefTab() {
   }, [search, memoTable]);
 
   const isSearching = search.trim().length > 0;
+
+  function handleAlgoClick(pair, word) {
+    setSelectedPair(prev =>
+      prev && prev.pair === pair ? null : { pair, word }
+    );
+  }
 
   return (
     <div>
@@ -61,6 +69,7 @@ export default function RefTab() {
                   hasOverride={hasOverride(key)}
                   onSave={updateEntry}
                   onReset={resetEntry}
+                  onAlgoClick={handleAlgoClick}
                 />
               ))}
             </div>
@@ -80,10 +89,20 @@ export default function RefTab() {
                 hasOverride={hasOverride}
                 onSave={updateEntry}
                 onReset={resetEntry}
+                onAlgoClick={handleAlgoClick}
               />
             );
           })}
         </div>
+      )}
+
+      {/* Algorithm player panel */}
+      {selectedPair && (
+        <AlgoPanel
+          pair={selectedPair.pair}
+          word={selectedPair.word}
+          onClose={() => setSelectedPair(null)}
+        />
       )}
     </div>
   );
