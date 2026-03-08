@@ -330,8 +330,11 @@ export function useAlgoCube() {
 
   // ── Highlight the 3 involved sticker positions ────────────────────────────
   // pair: e.g. "ㄅㄆ", type: 'corner'|'edge'
-  // Highlighted stickers → normal face colour
-  // All other stickers   → near-black (0x111111)
+  // Buffer sticker  → bright purple (0xbb44ff)
+  // Target stickers → normal face colour
+  // All other       → near-black (0x111111)
+  const BUFFER_COLOR = 0xbb44ff;
+
   function highlightInvolvedStickers(pair, type) {
     const { cubies, stickerMap } = s.current;
 
@@ -339,29 +342,29 @@ export function useAlgoCube() {
     // edge   buffer = UF  → U face = ㄅ
     const bufferChar = type === 'corner' ? 'ㄈ' : 'ㄅ';
 
-    // Build set of (cx,cy,cz,faceIdx) keys to highlight
-    const highlighted = new Set();
-    const addChar = (ch) => {
-      const entries = stickerMap[ch] || [];
-      entries
-        .filter(e => e.kind === type)
-        .forEach(e => highlighted.add(`${e.cx},${e.cy},${e.cz},${e.faceIdx}`));
-    };
+    const toKey = e => `${e.cx},${e.cy},${e.cz},${e.faceIdx}`;
+    const keysOf = (ch) =>
+      (stickerMap[ch] || []).filter(e => e.kind === type).map(toKey);
 
-    addChar(bufferChar);
-    for (const ch of pair) addChar(ch);
+    // Separate sets for buffer vs targets
+    const bufferKeys = new Set(keysOf(bufferChar));
+    const targetKeys = new Set([...pair].flatMap(ch => keysOf(ch)));
 
     // Apply colours to all non-centre cubies
     cubies.forEach(({ cx, cy, cz, mats, asgn }) => {
       asgn.forEach((face, i) => {
         if (!face) return; // inner face — skip
         const key = `${cx},${cy},${cz},${i}`;
-        if (highlighted.has(key)) {
-          // Show normal sticker colour
+        if (bufferKeys.has(key)) {
+          // Buffer sticker → bright purple
+          mats[i].color.setHex(BUFFER_COLOR);
+          mats[i].emissive.setHex(0x000000);
+        } else if (targetKeys.has(key)) {
+          // Target sticker → normal face colour
           mats[i].color.setHex(FACE_COLOR_HEX[face]);
           mats[i].emissive.setHex(0x000000);
         } else {
-          // Near-black dim (transparent stays false, no opacity tricks)
+          // Everything else → near-black
           mats[i].color.setHex(0x111111);
           mats[i].emissive.setHex(0x000000);
         }
