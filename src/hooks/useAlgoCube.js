@@ -403,9 +403,11 @@ export function useAlgoCube() {
     const moves = parseAlgo(algoStr);
     if (!moves.length) return;
 
+    // 先高亮（在 solved 狀態標記正確位置），再 scramble
+    // 材質會跟著方塊移動，自然出現在 scrambled 後的正確位置
+    highlightInvolvedStickers(pair, type);
     const inverse = invertSequence(moves);
     applyInstant(inverse);
-    highlightInvolvedStickers(pair, type);
 
     s.current.moveQueue   = moves;
     s.current.currentStep = 0;
