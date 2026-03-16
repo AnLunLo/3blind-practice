@@ -9,7 +9,8 @@ function normalize(s) {
  * @param {object} memoTable
  * @param {string|null} filter — 篩選的注音字（null = 全部）
  */
-export function useQuizSession(memoTable, filter) {
+// export function useQuizSession(memoTable, filter) {
+  export function useQuizSession(memoTable, filters) {
   const [current, setCurrent] = useState(null);
   const [stats, setStats] = useState({ c: 0, w: 0 });
   const [phase, setPhase] = useState('question'); // 'question' | 'answered'
@@ -17,10 +18,12 @@ export function useQuizSession(memoTable, filter) {
 
   const nextQuestion = useCallback(() => {
     let pool;
-    if (filter) {
+    if (filters && filters.length > 0) {
+    // if (filter) {
       // 篩選模式：直接從 memoTable 取所有以該注音字開頭的 pair
       pool = Object.entries(memoTable)
-        .filter(([pair]) => pair.startsWith(filter))
+        // .filter(([pair]) => pair.startsWith(filters))
+        .filter(([pair]) => filters.some(z => pair.startsWith(z)))
         .map(([pair, word]) => ({ pair, word }));
     } else {
       // 全部模式：只出現在 piece 結構中的合法 pair
@@ -33,7 +36,7 @@ export function useQuizSession(memoTable, filter) {
     setCurrent(item);
     setPhase('question');
     setLastCorrect(null);
-  }, [memoTable, filter, current]);
+  }, [memoTable, filters, current]);
 
   const submitAnswer = useCallback((userInput) => {
     if (!current || phase !== 'question') return;
