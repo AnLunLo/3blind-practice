@@ -44,7 +44,7 @@ export default function RecognitionTab() {
           onNext={nextQuestion}
         />
       </div>
-      <QuizCube ref={cubeRef} />
+      {/* <QuizCube ref={cubeRef} /> */}
     </div>
   );
 }

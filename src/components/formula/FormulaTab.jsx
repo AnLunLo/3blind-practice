@@ -92,11 +92,11 @@ export default function FormulaTab() {
           <div className="formula-detail-alg">{data[selected]}</div>
 
           {/* 方塊播放器（獨立 component，確保 hook 合規） */}
-          <FormulaCubePanel
+          {/* <FormulaCubePanel
             pair={selected}
             section={section}
             algoStr={data[selected]}
-          />
+          /> */}
         </div>
       )}
     </div>

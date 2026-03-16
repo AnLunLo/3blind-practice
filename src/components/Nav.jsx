@@ -1,9 +1,9 @@
 const TABS = [
-  { id: 'recognition', icon: '◈', label: '辨識' },
-  { id: 'identify',    icon: '◎', label: '指認' },
-  { id: 'practice',    icon: '◐', label: '練習' },
-  { id: 'ref',         icon: '≡', label: '參考表' },
-  { id: 'formula',    icon: '⊛', label: '公式' },
+  { id: 'practice',    icon: '◐', label: '基礎練習' },
+  { id: 'recognition', icon: '◈', label: '編碼練習' },
+  // { id: 'identify',    icon: '◎', label: '指認' },
+  { id: 'ref',         icon: '≡', label: '公式表' },
+  { id: 'formula',    icon: '⊛', label: '公式展示' },
 ];
 
 export default function Nav({ activeTab, onTabChange }) {
