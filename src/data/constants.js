@@ -24,3 +24,33 @@ export const ZHUYIN_ORDER = [
   'ㄍ','ㄎ','ㄏ','ㄐ','ㄑ','ㄒ','ㄓ','ㄔ',
   'ㄕ','ㄖ','ㄗ','ㄘ','ㄙ','ㄧ','ㄨ','ㄩ',
 ];
+
+
+export const COLORS = {
+  R: 0xb71234, // Red - right (+X)
+  O: 0xff5800, // Orange - left (-X)
+  W: 0xffffff, // White - top (+Y)
+  Y: 0xffd500, // Yellow - bottom (-Y)
+  G: 0x009b48, // Green - front (+Z)
+  B: 0x0046ad, // Blue - back (-Z)
+  X: 0x111111, // Internal
+};
+
+// Each move: axis to rotate around, which layer(s), angle in radians
+// Angles derived from standard Singmaster notation
+export const MOVE_MAP = {
+  R: { axis: 'x', layer: 1, angle: -Math.PI / 2 },
+  L: { axis: 'x', layer: -1, angle: Math.PI / 2 },
+  U: { axis: 'y', layer: 1, angle: -Math.PI / 2 },
+  D: { axis: 'y', layer: -1, angle: Math.PI / 2 },
+  F: { axis: 'z', layer: 1, angle: -Math.PI / 2 },
+  B: { axis: 'z', layer: -1, angle: Math.PI / 2 },
+  M: { axis: 'x', layer: 0, angle: Math.PI / 2 },
+  E: { axis: 'y', layer: 0, angle: Math.PI / 2 },
+  S: { axis: 'z', layer: 0, angle: -Math.PI / 2 },
+  x: { axis: 'x', layer: null, angle: -Math.PI / 2 },
+  y: { axis: 'y', layer: null, angle: -Math.PI / 2 },
+  z: { axis: 'z', layer: null, angle: -Math.PI / 2 },
+};
+
+export const SPEED_OPTIONS = [0.5, 1, 2, 4];
