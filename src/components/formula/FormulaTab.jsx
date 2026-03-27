@@ -76,9 +76,21 @@ export default function FormulaTab() {
   const data = section === 'corner' ? CORNER_ALGS : EDGE_ALGS;
 
   // 引擎初始化與更新邏輯
+// 引擎初始化與更新邏輯
   useEffect(() => {
-    if (!selected || !viewportRef.current) return;
+    // 1. 當 selected 被清空（切換父項目或注音時），清理並釋放舊引擎
+    if (!selected) {
+      if (engineRef.current) {
+        engineRef.current.dispose();
+        engineRef.current = null; // 關鍵：重置 ref，讓下次選中時能觸發重新建立
+        delete window.cubeApp;
+      }
+      return; 
+    }
 
+    if (!viewportRef.current) return;
+
+    // 2. 確保引擎存在 (如果是重新選中，上方已經清空了，這裡就會重新建立並綁定新 DOM)
     if (!engineRef.current) {
       const engine = new CubeEngine(viewportRef.current, (newState) => {
         setState(newState);
@@ -88,24 +100,28 @@ export default function FormulaTab() {
 
       const handleResize = () => engine.resize();
       window.addEventListener('resize', handleResize);
+      
+      // 建議：將 resize 的清理綁定在引擎實例上，或者確保 engine.dispose() 內部有處理
     }
 
-    // 載入並展開公式
+    // 3. 載入並展開公式
     const rawAlg = data[selected];
     const fullAlg = expandAlgorithm(rawAlg);
     engineRef.current.setAlgorithm(fullAlg);
+    
+  }, [selected, data]);
 
+  // 4. 新增一個獨立的 useEffect 處理組件銷毀
+  useEffect(() => {
     return () => {
-      // 當取消選擇公式時，徹底清理引擎以釋放資源並避免下次掛載錯誤
-      if (!selected && engineRef.current) {
+      if (engineRef.current) {
         engineRef.current.dispose();
         engineRef.current = null;
         delete window.cubeApp;
-        window.removeEventListener('resize', () => engineRef.current?.resize());
       }
     };
-  }, [selected, data]);
-
+  }, []); // 只有在 FormulaTab 徹底消失時執行
+  
   // 子組件：顯示步驟
   function MoveDisplay({ algorithm, currentStep }) {
     return (
@@ -119,42 +135,78 @@ export default function FormulaTab() {
     );
   }
 
-  // 子組件：播放控制器
-  function PlaybackControls({ engine, state }) {
-    const [speedIndex, setSpeedIndex] = useState(1);
-    const { currentStep, totalSteps, isPlaying } = state;
+function PlaybackControls({ engine, state }) {
+  const [speedIndex, setSpeedIndex] = useState(1);
+  const { currentStep, totalSteps, isPlaying } = state;
 
-    const cycleSpeed = useCallback(() => {
-      setSpeedIndex((prev) => {
-        const next = (prev + 1) % SPEED_OPTIONS.length;
-        engine.current?.setSpeed(SPEED_OPTIONS[next]);
-        return next;
-      });
-    }, [engine]);
+  const cycleSpeed = useCallback(() => {
+    setSpeedIndex((prev) => {
+      const next = (prev + 1) % SPEED_OPTIONS.length;
+      engine.current?.setSpeed(SPEED_OPTIONS[next]);
+      return next;
+    });
+  }, [engine]);
 
-    return (
-      <div className="controls">
+  // 定義內聯 SVG 圖標，確保一定能顯示
+  const icons = {
+    undo: <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>,
+    prev: <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>,
+    next: <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 18l8.5-6L6 6zm9-12h2v12h-2z"/></svg>,
+    play: <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>,
+    pause: <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>,
+    first: <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"/></svg>,
+    last: <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/></svg>
+  };
+
+  return (
+    <div className="algo-panel"> {/* 使用你 css 裡的 algo-panel 容器 */}
+      <div className="move-display">
         <MoveDisplay algorithm={state.algorithm} currentStep={currentStep} />
-        <div className="progress-row">
-          <input
-            type="range"
-            min={0}
-            max={totalSteps}
-            value={currentStep}
-            onChange={(e) => engine.current?.goToStep(parseInt(e.target.value))}
-          />
-          <button className="speed-btn" onClick={cycleSpeed}>
-            {SPEED_OPTIONS[speedIndex]}x
-          </button>
-        </div>
-        <div className="btn-row">
-            <button className="play-btn" onClick={() => engine.current?.togglePlay()}>
-                {isPlaying ? '暫停' : '播放'}
-            </button>
-        </div>
       </div>
-    );
-  }
+
+      <div className="algo-speed-row">
+        <input
+          type="range"
+          className="algo-speed-slider"
+          min={0}
+          max={totalSteps}
+          value={currentStep}
+          onChange={(e) => engine.current?.goToStep(parseInt(e.target.value))}
+        />
+        <button className="speed-btn" onClick={cycleSpeed}>
+          {SPEED_OPTIONS[speedIndex]}x
+        </button>
+      </div>
+
+      <div className="button-group">
+        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(0)}>{icons.undo}</button>
+        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(0)}>{icons.first}</button>
+        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(Math.max(0, currentStep - 1))}>{icons.prev}</button>
+        
+        <button className="ctrl-btn play-btn" onClick={() => engine.current?.togglePlay()}>
+          {isPlaying ? icons.pause : icons.play}
+        </button>
+
+        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(Math.min(totalSteps, currentStep + 1))}>{icons.next}</button>
+        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(totalSteps)}>{icons.last}</button>
+
+        {/* <button className="ctrl-btn" onClick={() => engine.current?.goToStep(0)}>{icons.undo}</button>
+        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(0)}>{icons.first}</button>
+
+        <button className="ctrl-btn" onClick={() => engine.current?.playPrev()}>{icons.prev}</button>
+
+        <button className="ctrl-btn play-btn" onClick={() => engine.current?.togglePlay()}>
+          {isPlaying ? icons.pause : icons.play}
+        </button>
+
+        <button className="ctrl-btn" onClick={() => engine.current?.playNext()}>{icons.next}</button>
+        
+        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(totalSteps)}>{icons.last}</button> */}
+      </div>
+      
+    </div>
+  );
+}
 
   const firstChars = useMemo(() => {
     const chars = new Set(Object.keys(data).map(k => k[0]));
