@@ -177,31 +177,30 @@ function PlaybackControls({ engine, state }) {
           {SPEED_OPTIONS[speedIndex]}x
         </button>
       </div>
-
       <div className="button-group">
-        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(0)}>{icons.undo}</button>
-        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(0)}>{icons.first}</button>
-        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(Math.max(0, currentStep - 1))}>{icons.prev}</button>
+        {/* 復原/回到起點，使用引擎內建的 skipToStart() 會自動處理暫停與跳轉 */}
+        <button className="ctrl-btn" onClick={() => engine.current?.skipToStart()}>{icons.undo}</button>
+        <button className="ctrl-btn" onClick={() => engine.current?.skipToStart()}>{icons.first}</button>
         
+        {/* 單步後退：先暫停播放，再觸發後退動畫 */}
+        <button className="ctrl-btn" onClick={() => { 
+          engine.current?.pause(); 
+          engine.current?.stepBackward(); 
+        }}>{icons.prev}</button>
+        
+        {/* 播放/暫停鍵維持原樣 */}
         <button className="ctrl-btn play-btn" onClick={() => engine.current?.togglePlay()}>
           {isPlaying ? icons.pause : icons.play}
         </button>
 
-        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(Math.min(totalSteps, currentStep + 1))}>{icons.next}</button>
-        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(totalSteps)}>{icons.last}</button>
-
-        {/* <button className="ctrl-btn" onClick={() => engine.current?.goToStep(0)}>{icons.undo}</button>
-        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(0)}>{icons.first}</button>
-
-        <button className="ctrl-btn" onClick={() => engine.current?.playPrev()}>{icons.prev}</button>
-
-        <button className="ctrl-btn play-btn" onClick={() => engine.current?.togglePlay()}>
-          {isPlaying ? icons.pause : icons.play}
-        </button>
-
-        <button className="ctrl-btn" onClick={() => engine.current?.playNext()}>{icons.next}</button>
+        {/* 單步前進：先暫停播放，再觸發前進動畫 */}
+        <button className="ctrl-btn" onClick={() => { 
+          engine.current?.pause(); 
+          engine.current?.stepForward(); 
+        }}>{icons.next}</button>
         
-        <button className="ctrl-btn" onClick={() => engine.current?.goToStep(totalSteps)}>{icons.last}</button> */}
+        {/* 跳到結尾，使用引擎內建的 skipToEnd() */}
+        <button className="ctrl-btn" onClick={() => engine.current?.skipToEnd()}>{icons.last}</button>
       </div>
       
     </div>

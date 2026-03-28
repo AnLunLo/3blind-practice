@@ -193,7 +193,9 @@ PlaybackControls
 
 
 .cube-container {
-  width: min(520px, 95vw);
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto; /* 確保在稍大的螢幕上能置中 */
   flex-shrink: 0; /* 防止被擠壓 */
   background: #2d2d2d;
   border-radius: 8px;
@@ -385,6 +387,7 @@ PlaybackControls
   justify-content: center;
   gap: 4px;
   margin-top: 8px;
+  flex-wrap: wrap; /* 加入這行：當螢幕太窄塞不下所有按鈕時，自動換行避免撐破版面 */
 }
 
 .button-group button {
